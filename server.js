@@ -29,10 +29,10 @@ app.post('/ai-team/request', async (req, res) => {
     const userRequest = req.body.message;
 
     try {
-        // 1. Architetto: Hermes 3 405B (Il modello gratuito più grande del mondo)
-        console.log("1. Hermes 3 405B sta progettando l'architettura...");
+        // 1. Architetto: Llama 3.3 70B (Garantito Gratis)
+        console.log("1. Llama 3.3 70B sta progettando l'architettura...");
         const archResponse = await openrouter.chat.completions.create({
-            model: "nousresearch/hermes-3-llama-3.1-405b:free", 
+            model: "meta-llama/llama-3.3-70b-instruct:free", 
             messages: [
                 { role: "system", content: "Sei il Project Manager di un gioco Roblox top-tier. Progetta sistemi scalabili, anti-lag, modulari. Non scrivere codice, solo logica sistemica." },
                 { role: "user", content: `Stato: ${gameMemory.game_state}. Richiesta: ${userRequest}` }
@@ -40,8 +40,8 @@ app.post('/ai-team/request', async (req, res) => {
         });
         const architecturePlan = archResponse.choices[0].message.content;
 
-        // 2. Programmatore: Qwen 2.5 Coder 32B
-        console.log("2. Qwen 2.5 Coder sta scrivendo il codice grezzo...");
+        // 2. Programmatore: Qwen 2.5 Coder 32B (Garantito Gratis)
+        console.log("2. Qwen 2.5 Coder 32B sta scrivendo il codice grezzo...");
         const coderResponse = await openrouter.chat.completions.create({
             model: "qwen/qwen-2.5-coder-32b-instruct:free", 
             messages: [
@@ -51,10 +51,10 @@ app.post('/ai-team/request', async (req, res) => {
         });
         let rawCode = coderResponse.choices[0].message.content;
 
-        // 3. Critico: Llama 3.3 70B
-        console.log("3. Llama 3.3 70B sta facendo la critica spietata (Reflection)...");
+        // 3. Critico: Qwen 2.5 72B (Garantito Gratis)
+        console.log("3. Qwen 2.5 72B sta facendo la critica spietata (Reflection)...");
         const criticResponse = await openrouter.chat.completions.create({
-            model: "meta-llama/llama-3.3-70b-instruct:free", 
+            model: "qwen/qwen-2.5-72b-instruct:free", 
             messages: [
                 { role: "system", content: "Sei un critico spietato. Leggi il codice Luau. Cerca loop infiniti, memory leak, exploit da hacker. Rispondi in JSON: {'is_safe': true/false, 'critique': 'motivo per cui fa schifo o 'ok''}" },
                 { role: "user", content: `Codice da criticare: ${rawCode}` }
@@ -71,7 +71,7 @@ app.post('/ai-team/request', async (req, res) => {
             criticData = { is_safe: true, critique: "ok" };
         }
 
-        // Se il Critic dice che fa schifo, lo rimanda indietro a Qwen per correggerlo!
+        // Se il Critic dice che fa schifo, lo rimanda indietro a Qwen Coder per correggerlo!
         if (!criticData.is_safe) {
             console.log("3.5. Il Critic ha trovato un bug! Rimando il codice a Qwen per correggerlo...");
             const fixResponse = await openrouter.chat.completions.create({
@@ -129,4 +129,4 @@ app.post('/ai-team/report-error', (req, res) => {
 });
 
 const PORT = process.env.PORT || 3000;
-app.listen(PORT, () => console.log(`Dream Team Apex (Hermes 405B) online sulla porta ${PORT}`));
+app.listen(PORT, () => console.log(`Dream Team Apex (Stable 100% Free) online sulla porta ${PORT}`));
