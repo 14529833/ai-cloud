@@ -13,11 +13,9 @@ const openrouter = new OpenAI({
 });
 const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
 
-// Memoria avanzata: tiene traccia di cosa c'è nel gioco E degli errori
 let gameMemory = { 
     game_state: "Baseplate vuoto. Pronto per lo sviluppo.", 
-    known_errors: [],
-    script_history: [] 
+    known_errors: [] 
 };
 
 let isAiWorking = false;
@@ -31,9 +29,10 @@ app.post('/ai-team/request', async (req, res) => {
     const userRequest = req.body.message;
 
     try {
-        console.log("1. Nemotron 5 405B sta progettando l'architettura suprema...");
+        // 1. Architetto: DeepSeek R1 (671B)
+        console.log("1. DeepSeek R1 (671B) sta progettando l'architettura...");
         const archResponse = await openrouter.chat.completions.create({
-            model: "nvidia/nemotron-5-405b-instruct:free", 
+            model: "deepseek/deepseek-r1:free", 
             messages: [
                 { role: "system", content: "Sei il Project Manager di un gioco Roblox top-tier. Progetta sistemi scalabili, anti-lag, modulari. Non scrivere codice, solo logica sistemica." },
                 { role: "user", content: `Stato: ${gameMemory.game_state}. Richiesta: ${userRequest}` }
@@ -41,9 +40,10 @@ app.post('/ai-team/request', async (req, res) => {
         });
         const architecturePlan = archResponse.choices[0].message.content;
 
-        console.log("2. Qwen 3.5 Coder 110B sta scrivendo il codice grezzo...");
+        // 2. Programmatore: Qwen 2.5 Coder 32B
+        console.log("2. Qwen 2.5 Coder 32B sta scrivendo il codice grezzo...");
         const coderResponse = await openrouter.chat.completions.create({
-            model: "qwen/qwen-3.5-coder-110b:free", 
+            model: "qwen/qwen-2.5-coder-32b-instruct:free", 
             messages: [
                 { role: "system", content: "Sei il miglior Senior Luau Developer. Scrivi SOLO codice Luau puro, zero markdown (no ```lua)." },
                 { role: "user", content: `Architettura: ${architecturePlan}. Genera il codice. Errori passati da evitare: ${gameMemory.known_errors.join(', ')}` }
@@ -51,9 +51,10 @@ app.post('/ai-team/request', async (req, res) => {
         });
         let rawCode = coderResponse.choices[0].message.content;
 
-        console.log("3. DeepSeek R3.5 sta facendo la critica spietata (Reflection)...");
+        // 3. Critico: DeepSeek R1 Distill Llama 70B
+        console.log("3. DeepSeek R1 Distill 70B sta facendo la critica spietata (Reflection)...");
         const criticResponse = await openrouter.chat.completions.create({
-            model: "deepseek/deepseek-r3.5-distill:free", 
+            model: "deepseek/deepseek-r1-distill-llama-70b:free", 
             messages: [
                 { role: "system", content: "Sei un critico spietato. Leggi il codice Luau. Cerca loop infiniti, memory leak, exploit da hacker. Rispondi in JSON: {'is_safe': true/false, 'critique': 'motivo per cui fa schifo o 'ok''}" },
                 { role: "user", content: `Codice da criticare: ${rawCode}` }
@@ -74,7 +75,7 @@ app.post('/ai-team/request', async (req, res) => {
         if (!criticData.is_safe) {
             console.log("3.5. Il Critic ha trovato un bug! Rimando il codice a Qwen per correggerlo...");
             const fixResponse = await openrouter.chat.completions.create({
-                model: "qwen/qwen-3.5-coder-110b:free", 
+                model: "qwen/qwen-2.5-coder-32b-instruct:free", 
                 messages: [
                     { role: "system", content: "Correggi il codice in base alla critica. Scrivi SOLO codice Luau puro." },
                     { role: "user", content: `Il Critic dice: ${criticData.critique}. Codice da fixare: ${rawCode}` }
@@ -83,8 +84,9 @@ app.post('/ai-team/request', async (req, res) => {
             rawCode = fixResponse.choices[0].message.content;
         }
 
-        console.log("4. Gemini 3.5 Pro aggiorna la memoria globale...");
-        const geminiModel = genAI.getGenerativeModel({ model: "gemini-3.5-pro" });
+        // 4. Gemini Flash per aggiornare la memoria
+        console.log("4. Gemini Flash aggiorna la memoria globale...");
+        const geminiModel = genAI.getGenerativeModel({ model: "gemini-1.5-flash" });
         const qaPrompt = `Aggiorna lo stato del gioco in base a questo codice Luau: ${rawCode}. Rispondi in JSON: {"new_state": "descrizione breve"}`;
         
         const qaResult = await geminiModel.generateContent(qaPrompt);
@@ -101,7 +103,6 @@ app.post('/ai-team/request', async (req, res) => {
 
         // Pulizia finale del markdown
         let finalCode = rawCode.replace(/```lua/g, '').replace(/```/g, '').trim();
-        gameMemory.script_history.push(finalCode);
 
         console.log("5. Invio del codice perfetto a Roblox!");
         isAiWorking = false;
@@ -119,14 +120,13 @@ app.post('/ai-team/request', async (req, res) => {
 });
 
 app.post('/ai-team/report-error', (req, res) => {
-    // AUTO-GUARIGIONE: Salva l'errore nella memoria. La prossima volta che Qwen scrive codice, leggerà questo errore e non lo farà più!
     const errorMsg = req.body.error;
     if (!gameMemory.known_errors.includes(errorMsg)) {
         gameMemory.known_errors.push(errorMsg);
-        console.log("⚠️ Errore di runtime ricevuto da Roblox e salvato nella memoria del team AI:", errorMsg);
+        console.log("⚠️ Errore di runtime ricevuto da Roblox:", errorMsg);
     }
     res.json({ status: "ok" });
 });
 
 const PORT = process.env.PORT || 3000;
-app.listen(PORT, () => console.log(`Dream Team Apex Predator (4 AI + Self-Healing) online sulla porta ${PORT}`));
+app.listen(PORT, () => console.log(`Dream Team Apex (Modelli Max Gratuiti) online sulla porta ${PORT}`));
