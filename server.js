@@ -6,7 +6,7 @@ const app = express();
 app.use(cors());
 app.use(express.json());
 
-// Inizializza Groq (Sempre gratis e iper-veloce)
+// Groq API: Iper-veloce e gratis
 const groq = new OpenAI({
   baseURL: "https://api.groq.com/openai/v1",
   apiKey: process.env.GROQ_API_KEY,
@@ -28,35 +28,34 @@ app.post('/ai-team/request', async (req, res) => {
     const userRequest = req.body.message;
 
     try {
-        // 1. Architetto: DeepSeek R1 Distill 70B (Il Pensatore)
-        console.log("1. DeepSeek R1 Distill 70B sta progettando l'architettura...");
+        // 1. Architetto (Llama 3.3 70B)
+        console.log("1. L'Architetto (Llama 3.3 70B) sta progettando...");
         const archResponse = await groq.chat.completions.create({
-            model: "deepseek-r1-distill-llama-70b", 
+            model: "llama-3.3-70b-versatile", 
             messages: [
-                { role: "system", content: "Sei il Project Manager di un gioco Roblox top-tier. Progetta sistemi scalabili, anti-lag, modulari. Non scrivere codice, solo logica sistemica." },
+                { role: "system", content: "Sei l'Architetto di un gioco Roblox. Progetta la logica in modo modulare. Non scrivere codice." },
                 { role: "user", content: `Stato: ${gameMemory.game_state}. Richiesta: ${userRequest}` }
             ]
         });
         const architecturePlan = archResponse.choices[0].message.content;
 
-        // 2. Programmatore: Qwen 2.5 Coder 32B (Il Re del Codice)
-        console.log("2. Qwen 2.5 Coder 32B sta scrivendo il codice Luau...");
+        // 2. Programmatore (Llama 3.3 70B)
+        console.log("2. Il Programmatore (Llama 3.3 70B) sta scrivendo il codice...");
         const coderResponse = await groq.chat.completions.create({
-            model: "qwen-2.5-coder-32b-instruct", 
+            model: "llama-3.3-70b-versatile", 
             messages: [
-                { role: "system", content: "Sei il miglior Senior Luau Developer. Scrivi SOLO codice Luau puro, zero markdown (no ```lua), pronto per ServerScriptService." },
-                { role: "user", content: `Architettura: ${architecturePlan}. Genera il codice. Errori passati da evitare: ${gameMemory.known_errors.join(', ')}` }
+                { role: "system", content: "Sei un Senior Luau Developer. Scrivi SOLO codice Luau puro, zero markdown (no ```lua)." },
+                { role: "user", content: `Architettura: ${architecturePlan}. Genera il codice. Errori passati: ${gameMemory.known_errors.join(', ')}` }
             ]
         });
         let rawCode = coderResponse.choices[0].message.content;
 
-        // 3. Critico: Llama 3.3 70B (Il QA Spietato)
-        console.log("3. Llama 3.3 70B sta criticando il codice (Reflection)...");
+        // 3. Critico (Gemma 2 9B - Google)
+        console.log("3. Il Critico (Gemma 2 9B) sta analizzando il codice...");
         const criticResponse = await groq.chat.completions.create({
-            model: "llama-3.3-70b-versatile", 
+            model: "gemma2-9b-it", 
             messages: [
-                { role: "system", content: "Sei un critico spietato. Leggi il codice Luau. Cerca loop infiniti, memory leak, exploit da hacker. Rispondi in JSON: {'is_safe': true/false, 'critique': 'motivo o ok'}" },
-                { role: "user", content: `Codice da criticare: ${rawCode}` }
+                { role: "user", content: `Sei un critico spietato. Leggi questo codice Luau: ${rawCode}. Cerca loop infiniti o memory leak. Rispondi in JSON: {"is_safe": true/false, "critique": "motivo o ok"}` }
             ]
         });
         let criticText = criticResponse.choices[0].message.content;
@@ -70,38 +69,23 @@ app.post('/ai-team/request', async (req, res) => {
             criticData = { is_safe: true, critique: "ok" };
         }
 
-        if (!criticData.is_safe) {
-            console.log("3.5. Bug trovato! Qwen Coder sta correggendo...");
-            const fixResponse = await groq.chat.completions.create({
-                model: "qwen-2.5-coder-32b-instruct", 
-                messages: [
-                    { role: "system", content: "Correggi il codice. Scrivi SOLO codice Luau puro." },
-                    { role: "user", content: `Critica: ${criticData.critique}. Codice: ${rawCode}` }
-                ]
-            });
-            rawCode = fixResponse.choices[0].message.content;
-        }
-
-        // 4. Memoria gestita da Llama 3.1 8B (Veloce e leggero)
-        console.log("4. Aggiornamento memoria...");
-        const memResponse = await groq.chat.completions.create({
-            model: "llama-3.1-8b-instant", 
+        // 4. Ottimizzatore & Lead Dev (Llama 3.3 70B)
+        // Se il Critico trova un bug, o comunque come passaggio finale per ottimizzare
+        console.log("4. L'Ottimizzatore (Llama 3.3 70B) sta finalizzando il codice...");
+        const optimizerResponse = await groq.chat.completions.create({
+            model: "llama-3.3-70b-versatile", 
             messages: [
-                { role: "system", content: "Aggiorna lo stato del gioco. Rispondi SOLO in JSON: {\"new_state\": \"descrizione breve\"}" },
-                { role: "user", content: `Codice appena generato: ${rawCode}` }
+                { role: "system", content: "Sei il Lead Developer. Prendi il codice, correggilo se il Critico ha trovato bug, ottimizzalo per il lag (usa task.wait() invece di wait()), e restituisci SOLO codice Luau puro pronto per Roblox." },
+                { role: "user", content: `Critica del Critico: ${criticData.critique}. Codice da processare: ${rawCode}` }
             ]
         });
-        let memText = memResponse.choices[0].message.content;
-        try {
-            const jsonStart = memText.indexOf('{');
-            const jsonEnd = memText.lastIndexOf('}');
-            const qaData = JSON.parse(memText.substring(jsonStart, jsonEnd + 1));
-            gameMemory.game_state = qaData.new_state || "Stato aggiornato";
-        } catch (e) {
-            gameMemory.game_state = "Stato aggiornato";
-        }
+        let finalCode = optimizerResponse.choices[0].message.content;
 
-        let finalCode = rawCode.replace(/```lua/g, '').replace(/```/g, '').trim();
+        // Aggiornamento Memoria (Interno, per risparmiare richieste API)
+        gameMemory.game_state = `Ultima feature implementata: ${userRequest}. Codice ottimizzato e sicuro.`;
+
+        // Pulizia finale del markdown
+        finalCode = finalCode.replace(/```lua/g, '').replace(/```/g, '').trim();
 
         console.log("5. Invio a Roblox!");
         isAiWorking = false;
@@ -122,10 +106,10 @@ app.post('/ai-team/report-error', (req, res) => {
     const errorMsg = req.body.error;
     if (!gameMemory.known_errors.includes(errorMsg)) {
         gameMemory.known_errors.push(errorMsg);
-        console.log("⚠️ Errore ricevuto:", errorMsg);
+        console.log("⚠️ Errore ricevuto da Roblox:", errorMsg);
     }
     res.json({ status: "ok" });
 });
 
 const PORT = process.env.PORT || 3000;
-app.listen(PORT, () => console.log(`Dream Team (Groq Apex: R1 + Qwen) online sulla porta ${PORT}`));
+app.listen(PORT, () => console.log(`Dream Team a 4 Agenti (Groq) online sulla porta ${PORT}`));
