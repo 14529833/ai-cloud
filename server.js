@@ -6,7 +6,7 @@ const app = express();
 app.use(cors());
 app.use(express.json());
 
-// Groq API: Iper-veloce e gratis
+// Groq API
 const groq = new OpenAI({
   baseURL: "https://api.groq.com/openai/v1",
   apiKey: process.env.GROQ_API_KEY,
@@ -28,10 +28,10 @@ app.post('/ai-team/request', async (req, res) => {
     const userRequest = req.body.message;
 
     try {
-        // 1. Architetto (Llama 3.3 70B)
-        console.log("1. L'Architetto (Llama 3.3 70B) sta progettando...");
+        // 1. Architetto (Llama 3.1 70B)
+        console.log("1. L'Architetto (Llama 3.1 70B) sta progettando...");
         const archResponse = await groq.chat.completions.create({
-            model: "llama-3.3-70b-versatile", 
+            model: "llama-3.1-70b-versatile", 
             messages: [
                 { role: "system", content: "Sei l'Architetto di un gioco Roblox. Progetta la logica in modo modulare. Non scrivere codice." },
                 { role: "user", content: `Stato: ${gameMemory.game_state}. Richiesta: ${userRequest}` }
@@ -39,10 +39,10 @@ app.post('/ai-team/request', async (req, res) => {
         });
         const architecturePlan = archResponse.choices[0].message.content;
 
-        // 2. Programmatore (Llama 3.3 70B)
-        console.log("2. Il Programmatore (Llama 3.3 70B) sta scrivendo il codice...");
+        // 2. Programmatore (Mixtral 8x7B)
+        console.log("2. Il Programmatore (Mixtral 8x7B) sta scrivendo il codice...");
         const coderResponse = await groq.chat.completions.create({
-            model: "llama-3.3-70b-versatile", 
+            model: "mixtral-8x7b-32768", 
             messages: [
                 { role: "system", content: "Sei un Senior Luau Developer. Scrivi SOLO codice Luau puro, zero markdown (no ```lua)." },
                 { role: "user", content: `Architettura: ${architecturePlan}. Genera il codice. Errori passati: ${gameMemory.known_errors.join(', ')}` }
@@ -50,7 +50,7 @@ app.post('/ai-team/request', async (req, res) => {
         });
         let rawCode = coderResponse.choices[0].message.content;
 
-        // 3. Critico (Gemma 2 9B - Google)
+        // 3. Critico (Gemma 2 9B)
         console.log("3. Il Critico (Gemma 2 9B) sta analizzando il codice...");
         const criticResponse = await groq.chat.completions.create({
             model: "gemma2-9b-it", 
@@ -69,22 +69,20 @@ app.post('/ai-team/request', async (req, res) => {
             criticData = { is_safe: true, critique: "ok" };
         }
 
-        // 4. Ottimizzatore & Lead Dev (Llama 3.3 70B)
-        // Se il Critico trova un bug, o comunque come passaggio finale per ottimizzare
-        console.log("4. L'Ottimizzatore (Llama 3.3 70B) sta finalizzando il codice...");
+        // 4. Ottimizzatore (Llama 3.1 70B)
+        console.log("4. L'Ottimizzatore (Llama 3.1 70B) sta finalizzando...");
         const optimizerResponse = await groq.chat.completions.create({
-            model: "llama-3.3-70b-versatile", 
+            model: "llama-3.1-70b-versatile", 
             messages: [
                 { role: "system", content: "Sei il Lead Developer. Prendi il codice, correggilo se il Critico ha trovato bug, ottimizzalo per il lag (usa task.wait() invece di wait()), e restituisci SOLO codice Luau puro pronto per Roblox." },
-                { role: "user", content: `Critica del Critico: ${criticData.critique}. Codice da processare: ${rawCode}` }
+                { role: "user", content: `Critica: ${criticData.critique}. Codice: ${rawCode}` }
             ]
         });
         let finalCode = optimizerResponse.choices[0].message.content;
 
-        // Aggiornamento Memoria (Interno, per risparmiare richieste API)
-        gameMemory.game_state = `Ultima feature implementata: ${userRequest}. Codice ottimizzato e sicuro.`;
+        // Memoria interna
+        gameMemory.game_state = `Ultima feature: ${userRequest}. Codice processato.`;
 
-        // Pulizia finale del markdown
         finalCode = finalCode.replace(/```lua/g, '').replace(/```/g, '').trim();
 
         console.log("5. Invio a Roblox!");
@@ -106,10 +104,10 @@ app.post('/ai-team/report-error', (req, res) => {
     const errorMsg = req.body.error;
     if (!gameMemory.known_errors.includes(errorMsg)) {
         gameMemory.known_errors.push(errorMsg);
-        console.log("⚠️ Errore ricevuto da Roblox:", errorMsg);
+        console.log("⚠️ Errore ricevuto:", errorMsg);
     }
     res.json({ status: "ok" });
 });
 
 const PORT = process.env.PORT || 3000;
-app.listen(PORT, () => console.log(`Dream Team a 4 Agenti (Groq) online sulla porta ${PORT}`));
+app.listen(PORT, () => console.log(`Dream Team 4 Agenti (Stable Groq) online sulla porta ${PORT}`));
