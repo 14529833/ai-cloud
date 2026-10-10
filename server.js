@@ -1,12 +1,12 @@
 const express = require('express');
 const cors = require('cors');
-const { OpenAI } = require('openai'); // Stessa libreria, ma punta a Groq
+const { OpenAI } = require('openai');
 
 const app = express();
 app.use(cors());
 app.use(express.json());
 
-// Inizializza Groq (100% Gratis, stabilissimo, velocissimo)
+// Inizializza Groq (Sempre gratis e iper-veloce)
 const groq = new OpenAI({
   baseURL: "https://api.groq.com/openai/v1",
   apiKey: process.env.GROQ_API_KEY,
@@ -28,10 +28,10 @@ app.post('/ai-team/request', async (req, res) => {
     const userRequest = req.body.message;
 
     try {
-        // 1. Architetto: Llama 3.3 70B (Il più potente di Groq)
-        console.log("1. Llama 3.3 70B sta progettando l'architettura...");
+        // 1. Architetto: DeepSeek R1 Distill 70B (Il Pensatore)
+        console.log("1. DeepSeek R1 Distill 70B sta progettando l'architettura...");
         const archResponse = await groq.chat.completions.create({
-            model: "llama-3.3-70b-versatile", 
+            model: "deepseek-r1-distill-llama-70b", 
             messages: [
                 { role: "system", content: "Sei il Project Manager di un gioco Roblox top-tier. Progetta sistemi scalabili, anti-lag, modulari. Non scrivere codice, solo logica sistemica." },
                 { role: "user", content: `Stato: ${gameMemory.game_state}. Richiesta: ${userRequest}` }
@@ -39,10 +39,10 @@ app.post('/ai-team/request', async (req, res) => {
         });
         const architecturePlan = archResponse.choices[0].message.content;
 
-        // 2. Programmatore: Llama 3.3 70B
-        console.log("2. Llama 3.3 70B sta scrivendo il codice Luau...");
+        // 2. Programmatore: Qwen 2.5 Coder 32B (Il Re del Codice)
+        console.log("2. Qwen 2.5 Coder 32B sta scrivendo il codice Luau...");
         const coderResponse = await groq.chat.completions.create({
-            model: "llama-3.3-70b-versatile", 
+            model: "qwen-2.5-coder-32b-instruct", 
             messages: [
                 { role: "system", content: "Sei il miglior Senior Luau Developer. Scrivi SOLO codice Luau puro, zero markdown (no ```lua), pronto per ServerScriptService." },
                 { role: "user", content: `Architettura: ${architecturePlan}. Genera il codice. Errori passati da evitare: ${gameMemory.known_errors.join(', ')}` }
@@ -50,10 +50,10 @@ app.post('/ai-team/request', async (req, res) => {
         });
         let rawCode = coderResponse.choices[0].message.content;
 
-        // 3. Critico: Llama 3.1 8B (Super Veloce per fare il QA)
-        console.log("3. Llama 3.1 8B sta criticando il codice (Reflection)...");
+        // 3. Critico: Llama 3.3 70B (Il QA Spietato)
+        console.log("3. Llama 3.3 70B sta criticando il codice (Reflection)...");
         const criticResponse = await groq.chat.completions.create({
-            model: "llama-3.1-8b-instant", 
+            model: "llama-3.3-70b-versatile", 
             messages: [
                 { role: "system", content: "Sei un critico spietato. Leggi il codice Luau. Cerca loop infiniti, memory leak, exploit da hacker. Rispondi in JSON: {'is_safe': true/false, 'critique': 'motivo o ok'}" },
                 { role: "user", content: `Codice da criticare: ${rawCode}` }
@@ -71,9 +71,9 @@ app.post('/ai-team/request', async (req, res) => {
         }
 
         if (!criticData.is_safe) {
-            console.log("3.5. Bug trovato! Llama 3.3 sta correggendo...");
+            console.log("3.5. Bug trovato! Qwen Coder sta correggendo...");
             const fixResponse = await groq.chat.completions.create({
-                model: "llama-3.3-70b-versatile", 
+                model: "qwen-2.5-coder-32b-instruct", 
                 messages: [
                     { role: "system", content: "Correggi il codice. Scrivi SOLO codice Luau puro." },
                     { role: "user", content: `Critica: ${criticData.critique}. Codice: ${rawCode}` }
@@ -82,7 +82,7 @@ app.post('/ai-team/request', async (req, res) => {
             rawCode = fixResponse.choices[0].message.content;
         }
 
-        // 4. Memoria
+        // 4. Memoria gestita da Llama 3.1 8B (Veloce e leggero)
         console.log("4. Aggiornamento memoria...");
         const memResponse = await groq.chat.completions.create({
             model: "llama-3.1-8b-instant", 
@@ -128,4 +128,4 @@ app.post('/ai-team/report-error', (req, res) => {
 });
 
 const PORT = process.env.PORT || 3000;
-app.listen(PORT, () => console.log(`Dream Team (Groq Engine) online sulla porta ${PORT}`));
+app.listen(PORT, () => console.log(`Dream Team (Groq Apex: R1 + Qwen) online sulla porta ${PORT}`));
