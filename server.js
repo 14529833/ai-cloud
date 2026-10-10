@@ -34,7 +34,7 @@ app.post('/ai-team/request', async (req, res) => {
     try {
         // 1. Architetto: Gemini 1.5 Flash (Google Diretto - Gratis 100%)
         console.log("1. Gemini 1.5 Flash sta progettando l'architettura...");
-        const archModel = genAI.getGenerativeModel({ model: "gemini-1.5-flash" });
+        const archModel = genAI.getGenerativeModel({ model: "gemini-1.5-flash-latest" });
         const archPrompt = `Sei il Project Manager di un gioco Roblox. Progetta sistemi scalabili e modulari. Non scrivere codice, solo logica. Stato: ${gameMemory.game_state}. Richiesta: ${userRequest}`;
         const archResult = await archModel.generateContent(archPrompt);
         const architecturePlan = archResult.response.text();
@@ -52,7 +52,7 @@ app.post('/ai-team/request', async (req, res) => {
 
         // 3. Critico: Gemini 1.5 Flash (Google Diretto - Gratis 100%)
         console.log("3. Gemini Flash sta criticando il codice (Reflection)...");
-        const criticModel = genAI.getGenerativeModel({ model: "gemini-1.5-flash" });
+        const criticModel = genAI.getGenerativeModel({ model: "gemini-1.5-flash-latest" });
         const criticPrompt = `Sei un critico spietato. Leggi questo codice Luau: ${rawCode}. Cerca loop infiniti o memory leak. Rispondi in JSON: {"is_safe": true/false, "critique": "motivo o ok"}`;
         const criticResult = await criticModel.generateContent(criticPrompt);
         let criticText = criticResult.response.text();
