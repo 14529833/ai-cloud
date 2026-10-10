@@ -80,7 +80,7 @@ app.post('/ai-team/request', async (req, res) => {
 
         // 4. Memoria (Google Diretto)
         console.log("4. Aggiornamento memoria...");
-        const memModel = genAI.getGenerativeModel({ model: "gemini-1.5-flash" });
+        const memModel = genAI.getGenerativeModel({ model: "gemini-1.5-flash-latest" });
         const memPrompt = `Aggiorna lo stato del gioco in base a questo codice: ${rawCode}. Rispondi in JSON: {"new_state": "descrizione"}`;
         const memResult = await memModel.generateContent(memPrompt);
         const memText = memResult.response.text();
