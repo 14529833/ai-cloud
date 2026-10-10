@@ -7,10 +7,13 @@ const app = express();
 app.use(cors());
 app.use(express.json());
 
+// OpenRouter (Usiamo SOLO per Qwen Coder, che è stabile)
 const openrouter = new OpenAI({
   baseURL: "https://openrouter.ai/api/v1",
   apiKey: process.env.OPENROUTER_API_KEY,
 });
+
+// Google API Diretta (Usiamo per Architetto, Critico e Memoria - 100% gratis e senza 404)
 const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
 
 let gameMemory = { 
@@ -29,38 +32,30 @@ app.post('/ai-team/request', async (req, res) => {
     const userRequest = req.body.message;
 
     try {
-        // 1. Architetto: Gemini 2.0 Flash (Sponsorizzato gratis da Google)
-        console.log("1. Gemini 2.0 Flash sta progettando l'architettura...");
-        const archResponse = await openrouter.chat.completions.create({
-            model: "google/gemini-2.0-flash-exp:free", 
-            messages: [
-                { role: "system", content: "Sei il Project Manager di un gioco Roblox top-tier. Progetta sistemi scalabili, anti-lag, modulari. Non scrivere codice, solo logica sistemica." },
-                { role: "user", content: `Stato: ${gameMemory.game_state}. Richiesta: ${userRequest}` }
-            ]
-        });
-        const architecturePlan = archResponse.choices[0].message.content;
+        // 1. Architetto: Gemini 1.5 Flash (Google Diretto - Gratis 100%)
+        console.log("1. Gemini 1.5 Flash sta progettando l'architettura...");
+        const archModel = genAI.getGenerativeModel({ model: "gemini-1.5-flash" });
+        const archPrompt = `Sei il Project Manager di un gioco Roblox. Progetta sistemi scalabili e modulari. Non scrivere codice, solo logica. Stato: ${gameMemory.game_state}. Richiesta: ${userRequest}`;
+        const archResult = await archModel.generateContent(archPrompt);
+        const architecturePlan = archResult.response.text();
 
-        // 2. Programmatore: Qwen 2.5 Coder 32B
-        console.log("2. Qwen 2.5 Coder 32B sta scrivendo il codice grezzo...");
+        // 2. Programmatore: Qwen 2.5 Coder 32B (OpenRouter)
+        console.log("2. Qwen 2.5 Coder 32B sta scrivendo il codice...");
         const coderResponse = await openrouter.chat.completions.create({
             model: "qwen/qwen-2.5-coder-32b-instruct:free", 
             messages: [
                 { role: "system", content: "Sei il miglior Senior Luau Developer. Scrivi SOLO codice Luau puro, zero markdown (no ```lua)." },
-                { role: "user", content: `Architettura: ${architecturePlan}. Genera il codice. Errori passati da evitare: ${gameMemory.known_errors.join(', ')}` }
+                { role: "user", content: `Architettura: ${architecturePlan}. Genera il codice. Errori passati: ${gameMemory.known_errors.join(', ')}` }
             ]
         });
         let rawCode = coderResponse.choices[0].message.content;
 
-        // 3. Critico: DeepSeek V3 (Gratis e aggressivo)
-        console.log("3. DeepSeek V3 sta facendo la critica spietata (Reflection)...");
-        const criticResponse = await openrouter.chat.completions.create({
-            model: "deepseek/deepseek-chat:free", 
-            messages: [
-                { role: "system", content: "Sei un critico spietato. Leggi il codice Luau. Cerca loop infiniti, memory leak, exploit da hacker. Rispondi in JSON: {'is_safe': true/false, 'critique': 'motivo per cui fa schifo o 'ok''}" },
-                { role: "user", content: `Codice da criticare: ${rawCode}` }
-            ]
-        });
-        let criticText = criticResponse.choices[0].message.content;
+        // 3. Critico: Gemini 1.5 Flash (Google Diretto - Gratis 100%)
+        console.log("3. Gemini Flash sta criticando il codice (Reflection)...");
+        const criticModel = genAI.getGenerativeModel({ model: "gemini-1.5-flash" });
+        const criticPrompt = `Sei un critico spietato. Leggi questo codice Luau: ${rawCode}. Cerca loop infiniti o memory leak. Rispondi in JSON: {"is_safe": true/false, "critique": "motivo o ok"}`;
+        const criticResult = await criticModel.generateContent(criticPrompt);
+        let criticText = criticResult.response.text();
         
         let criticData;
         try {
@@ -71,40 +66,36 @@ app.post('/ai-team/request', async (req, res) => {
             criticData = { is_safe: true, critique: "ok" };
         }
 
-        // Se il Critic dice che fa schifo, lo rimanda indietro a Qwen per correggerlo!
         if (!criticData.is_safe) {
-            console.log("3.5. Il Critic ha trovato un bug! Rimando il codice a Qwen per correggerlo...");
+            console.log("3.5. Bug trovato! Qwen sta correggendo...");
             const fixResponse = await openrouter.chat.completions.create({
                 model: "qwen/qwen-2.5-coder-32b-instruct:free", 
                 messages: [
-                    { role: "system", content: "Correggi il codice in base alla critica. Scrivi SOLO codice Luau puro." },
-                    { role: "user", content: `Il Critic dice: ${criticData.critique}. Codice da fixare: ${rawCode}` }
+                    { role: "system", content: "Correggi il codice. Scrivi SOLO codice Luau puro." },
+                    { role: "user", content: `Critica: ${criticData.critique}. Codice: ${rawCode}` }
                 ]
             });
             rawCode = fixResponse.choices[0].message.content;
         }
 
-        // 4. Gemini Flash per aggiornare la memoria (usa API diretta di Google)
-        console.log("4. Aggiornamento memoria globale...");
-        const geminiModel = genAI.getGenerativeModel({ model: "gemini-1.5-flash" });
-        const qaPrompt = `Aggiorna lo stato del gioco in base a questo codice Luau: ${rawCode}. Rispondi in JSON: {"new_state": "descrizione breve"}`;
-        
-        const qaResult = await geminiModel.generateContent(qaPrompt);
-        const qaText = qaResult.response.text();
-        let qaData;
+        // 4. Memoria (Google Diretto)
+        console.log("4. Aggiornamento memoria...");
+        const memModel = genAI.getGenerativeModel({ model: "gemini-1.5-flash" });
+        const memPrompt = `Aggiorna lo stato del gioco in base a questo codice: ${rawCode}. Rispondi in JSON: {"new_state": "descrizione"}`;
+        const memResult = await memModel.generateContent(memPrompt);
+        const memText = memResult.response.text();
         try {
-            const jsonStart = qaText.indexOf('{');
-            const jsonEnd = qaText.lastIndexOf('}');
-            qaData = JSON.parse(qaText.substring(jsonStart, jsonEnd + 1));
+            const jsonStart = memText.indexOf('{');
+            const jsonEnd = memText.lastIndexOf('}');
+            const qaData = JSON.parse(memText.substring(jsonStart, jsonEnd + 1));
             gameMemory.game_state = qaData.new_state || "Stato aggiornato";
         } catch (e) {
             gameMemory.game_state = "Stato aggiornato";
         }
 
-        // Pulizia finale del markdown
         let finalCode = rawCode.replace(/```lua/g, '').replace(/```/g, '').trim();
 
-        console.log("5. Invio del codice perfetto a Roblox!");
+        console.log("5. Invio a Roblox!");
         isAiWorking = false;
         res.json({ 
             architetto: architecturePlan, 
@@ -115,7 +106,7 @@ app.post('/ai-team/request', async (req, res) => {
     } catch (error) {
         console.error("Errore API:", error.message);
         isAiWorking = false;
-        res.status(500).json({ error: "Limite gratuito raggiunto o errore di rete. Riprova." });
+        res.status(500).json({ error: "Errore di rete." });
     }
 });
 
@@ -123,10 +114,10 @@ app.post('/ai-team/report-error', (req, res) => {
     const errorMsg = req.body.error;
     if (!gameMemory.known_errors.includes(errorMsg)) {
         gameMemory.known_errors.push(errorMsg);
-        console.log("⚠️ Errore di runtime ricevuto da Roblox:", errorMsg);
+        console.log("⚠️ Errore ricevuto:", errorMsg);
     }
     res.json({ status: "ok" });
 });
 
 const PORT = process.env.PORT || 3000;
-app.listen(PORT, () => console.log(`Dream Team Apex (Gemini 2.0 + Qwen + DeepSeek V3) online sulla porta ${PORT}`));
+app.listen(PORT, () => console.log(`Dream Team (Google Shield) online sulla porta ${PORT}`));
