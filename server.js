@@ -7,13 +7,13 @@ const app = express();
 app.use(cors());
 app.use(express.json());
 
-// OpenRouter (Usiamo SOLO per Qwen Coder, che è stabile)
+// OpenRouter (Usiamo SOLO per Qwen Coder, che è stabile e gratuito)
 const openrouter = new OpenAI({
   baseURL: "https://openrouter.ai/api/v1",
   apiKey: process.env.OPENROUTER_API_KEY,
 });
 
-// Google API Diretta (Usiamo per Architetto, Critico e Memoria - 100% gratis e senza 404)
+// Google API Diretta (Usiamo per Architetto, Critico e Memoria - 100% gratis)
 const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
 
 let gameMemory = { 
@@ -32,9 +32,9 @@ app.post('/ai-team/request', async (req, res) => {
     const userRequest = req.body.message;
 
     try {
-        // 1. Architetto: Gemini 1.5 Flash (Google Diretto - Gratis 100%)
-        console.log("1. Gemini 1.5 Flash sta progettando l'architettura...");
-        const archModel = genAI.getGenerativeModel({ model: "gemini-1.5-flash-latest" });
+        // 1. Architetto: Gemini 2.0 Flash (Google Diretto)
+        console.log("1. Gemini 2.0 Flash sta progettando l'architettura...");
+        const archModel = genAI.getGenerativeModel({ model: "gemini-2.0-flash-001" });
         const archPrompt = `Sei il Project Manager di un gioco Roblox. Progetta sistemi scalabili e modulari. Non scrivere codice, solo logica. Stato: ${gameMemory.game_state}. Richiesta: ${userRequest}`;
         const archResult = await archModel.generateContent(archPrompt);
         const architecturePlan = archResult.response.text();
@@ -50,9 +50,9 @@ app.post('/ai-team/request', async (req, res) => {
         });
         let rawCode = coderResponse.choices[0].message.content;
 
-        // 3. Critico: Gemini 1.5 Flash (Google Diretto - Gratis 100%)
+        // 3. Critico: Gemini 2.0 Flash (Google Diretto)
         console.log("3. Gemini Flash sta criticando il codice (Reflection)...");
-        const criticModel = genAI.getGenerativeModel({ model: "gemini-1.5-flash-latest" });
+        const criticModel = genAI.getGenerativeModel({ model: "gemini-2.0-flash-001" });
         const criticPrompt = `Sei un critico spietato. Leggi questo codice Luau: ${rawCode}. Cerca loop infiniti o memory leak. Rispondi in JSON: {"is_safe": true/false, "critique": "motivo o ok"}`;
         const criticResult = await criticModel.generateContent(criticPrompt);
         let criticText = criticResult.response.text();
@@ -80,7 +80,7 @@ app.post('/ai-team/request', async (req, res) => {
 
         // 4. Memoria (Google Diretto)
         console.log("4. Aggiornamento memoria...");
-        const memModel = genAI.getGenerativeModel({ model: "gemini-1.5-flash-latest" });
+        const memModel = genAI.getGenerativeModel({ model: "gemini-2.0-flash-001" });
         const memPrompt = `Aggiorna lo stato del gioco in base a questo codice: ${rawCode}. Rispondi in JSON: {"new_state": "descrizione"}`;
         const memResult = await memModel.generateContent(memPrompt);
         const memText = memResult.response.text();
@@ -120,4 +120,4 @@ app.post('/ai-team/report-error', (req, res) => {
 });
 
 const PORT = process.env.PORT || 3000;
-app.listen(PORT, () => console.log(`Dream Team (Google Shield) online sulla porta ${PORT}`));
+app.listen(PORT, () => console.log(`Dream Team (Google Shield 2.0) online sulla porta ${PORT}`));
