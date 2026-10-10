@@ -29,10 +29,10 @@ app.post('/ai-team/request', async (req, res) => {
     const userRequest = req.body.message;
 
     try {
-        // 1. Architetto: DeepSeek R1 (671B)
-        console.log("1. DeepSeek R1 (671B) sta progettando l'architettura...");
+        // 1. Architetto: Hermes 3 405B (Il modello gratuito più grande del mondo)
+        console.log("1. Hermes 3 405B sta progettando l'architettura...");
         const archResponse = await openrouter.chat.completions.create({
-            model: "deepseek/deepseek-r1:free", 
+            model: "nousresearch/hermes-3-llama-3.1-405b:free", 
             messages: [
                 { role: "system", content: "Sei il Project Manager di un gioco Roblox top-tier. Progetta sistemi scalabili, anti-lag, modulari. Non scrivere codice, solo logica sistemica." },
                 { role: "user", content: `Stato: ${gameMemory.game_state}. Richiesta: ${userRequest}` }
@@ -41,7 +41,7 @@ app.post('/ai-team/request', async (req, res) => {
         const architecturePlan = archResponse.choices[0].message.content;
 
         // 2. Programmatore: Qwen 2.5 Coder 32B
-        console.log("2. Qwen 2.5 Coder 32B sta scrivendo il codice grezzo...");
+        console.log("2. Qwen 2.5 Coder sta scrivendo il codice grezzo...");
         const coderResponse = await openrouter.chat.completions.create({
             model: "qwen/qwen-2.5-coder-32b-instruct:free", 
             messages: [
@@ -51,10 +51,10 @@ app.post('/ai-team/request', async (req, res) => {
         });
         let rawCode = coderResponse.choices[0].message.content;
 
-        // 3. Critico: DeepSeek R1 Distill Llama 70B
-        console.log("3. DeepSeek R1 Distill 70B sta facendo la critica spietata (Reflection)...");
+        // 3. Critico: Llama 3.3 70B
+        console.log("3. Llama 3.3 70B sta facendo la critica spietata (Reflection)...");
         const criticResponse = await openrouter.chat.completions.create({
-            model: "deepseek/deepseek-r1-distill-llama-70b:free", 
+            model: "meta-llama/llama-3.3-70b-instruct:free", 
             messages: [
                 { role: "system", content: "Sei un critico spietato. Leggi il codice Luau. Cerca loop infiniti, memory leak, exploit da hacker. Rispondi in JSON: {'is_safe': true/false, 'critique': 'motivo per cui fa schifo o 'ok''}" },
                 { role: "user", content: `Codice da criticare: ${rawCode}` }
@@ -85,7 +85,7 @@ app.post('/ai-team/request', async (req, res) => {
         }
 
         // 4. Gemini Flash per aggiornare la memoria
-        console.log("4. Gemini Flash aggiorna la memoria globale...");
+        console.log("4. Aggiornamento memoria globale...");
         const geminiModel = genAI.getGenerativeModel({ model: "gemini-1.5-flash" });
         const qaPrompt = `Aggiorna lo stato del gioco in base a questo codice Luau: ${rawCode}. Rispondi in JSON: {"new_state": "descrizione breve"}`;
         
@@ -129,4 +129,4 @@ app.post('/ai-team/report-error', (req, res) => {
 });
 
 const PORT = process.env.PORT || 3000;
-app.listen(PORT, () => console.log(`Dream Team Apex (Modelli Max Gratuiti) online sulla porta ${PORT}`));
+app.listen(PORT, () => console.log(`Dream Team Apex (Hermes 405B) online sulla porta ${PORT}`));
